@@ -1,6 +1,8 @@
 import React from 'react'
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { AddJob, Admin, AllJobs, DashboardLayout, EditJob, Error, HomeLayout, Landing, Login, Profile, Register, Stats } from './pages';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 
 //actions
 import { action as registerAction } from './pages/Register';
@@ -14,6 +16,16 @@ import{loader as allJobsLoader} from './pages/AllJobs'
 import{loader as editJobLoader} from './pages/EditJob'
 import{loader as adminLoader} from './pages/Admin'
 import{loader as statsLoader} from './pages/Stats'
+import ErrorElement from './components/ErrorElement';
+
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5,
+    },
+  },
+});
 const router=createBrowserRouter([
 
   {
@@ -33,33 +45,40 @@ const router=createBrowserRouter([
       {
         path:'login',
         element:<Login/>,
-        action:loginAction
+        action:loginAction(queryClient)
       },
       {
         path:'dashboard',
-        element:<DashboardLayout/>,
-        loader:dashboardLoader,
+        element:<DashboardLayout
+        queryClient={queryClient}
+        />,
+       
+        loader:dashboardLoader(queryClient),
         children:[
           {
             index:true,
             element:<AddJob/>,
             action:addJobAction,
+            errorElement:<ErrorElement/>
           },
           {
             path:'stats',
             element:<Stats/>,
-            loader:statsLoader,
+            loader:statsLoader(queryClient),
+            errorElement:<ErrorElement/>
           },
           {
             path:'all-jobs',
             element:<AllJobs/>,
-            loader:allJobsLoader
+            loader:allJobsLoader,
+            errorElement:<ErrorElement/>
           
 
           },{
             path:'profile',
             element:<Profile/>,
-            action:updateProfileAction
+            action:updateProfileAction(queryClient),
+            errorElement:<ErrorElement/>
           },
           {
             path:'admin',
@@ -88,7 +107,12 @@ const router=createBrowserRouter([
 
 
 const App = () => {
-  return <RouterProvider router={router}/>
+  return (
+    <QueryClientProvider client={queryClient}>
+      <RouterProvider router={router} />
+      <ReactQueryDevtools initialIsOpen={false} />
+    </QueryClientProvider>
+  );
 }
 
 export default App

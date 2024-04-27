@@ -6,9 +6,9 @@ import customFetch from '../utils/customFetch';
 import { toast } from 'react-toastify';
 
 
-export const action = async ({ request }) => {
+export const action = (queryClient)=>async ({ request }) => {
   const formData = await request.formData();
-
+  queryClient.invalidateQueries(['user']);
   const file = formData.get('avatar');
   if (file && file.size > 500000) {
     toast.error('Image size too large');

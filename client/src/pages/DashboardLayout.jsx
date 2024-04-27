@@ -1,15 +1,23 @@
 import React, { createContext, useContext, useState } from 'react'
-import { Outlet, redirect, useLoaderData, useNavigate } from 'react-router-dom'
+import { Outlet, redirect, useLoaderData, useNavigate, useNavigation } from 'react-router-dom'
 import styled from 'styled-components';
-import { BigSidebar, Navbar, SmallSidebar } from '../components';
+import { BigSidebar, Loading, Navbar, SmallSidebar } from '../components';
 import customFetch from '../utils/customFetch';
 import { toast } from 'react-toastify';
+import { useQuery } from '@tanstack/react-query';
+
+const userQuery = {
+  queryKey: ['user'],
+  queryFn: async () => {
+    const { data } = await customFetch('/users/current-user');
+    return data;
+  },
+};
 
 
-export const loader=async()=>{
+export const loader=(queryClient)=>async()=>{
   try {
-    const{data}=await customFetch('/users/current-user')
-    return data
+    return await queryClient.ensureQueryData(userQuery);
   } catch (error) {
     return redirect('/login')
   }
@@ -18,14 +26,16 @@ export const loader=async()=>{
 const DashboardContext=createContext()
 
 const checkDefaultTheme=()=>{
+ 
   const isDarkTheme=localStorage.getItem('darkTheme')==='true'
   document.body.classList.toggle('dark-theme',isDarkTheme)
   return isDarkTheme
 }
 
-const DashboardLayout = () => {
-  const {user}=useLoaderData()
-
+const DashboardLayout = ({queryClient}) => {
+  const {user}=useQuery(userQuery)?.data
+  const navigation = useNavigation();
+  const isPageLoading = navigation.state === 'loading';
 const navigate=useNavigate()
 const[showSidebar,setShowSidebar]=useState(false)
 const[isDarkTheme,setIsDarkTheme]=useState(checkDefaultTheme())
@@ -46,6 +56,7 @@ const logoutUser=async()=>{
  
 navigate('/')
 await customFetch.get('/auth/logout')
+queryClient.invalidateQueries();
 toast.success('You logged out!')
 
 }
@@ -60,7 +71,7 @@ toast.success('You logged out!')
   <div>
     <Navbar/>
     <div className="dashboard-page">
-    <Outlet context={{user}}/>
+    {isPageLoading ? <Loading /> : <Outlet context={{ user }} />}
     </div>
   </div>
 </main>

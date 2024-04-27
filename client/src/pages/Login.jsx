@@ -5,7 +5,7 @@ import styled from 'styled-components';
 import customFetch from '../utils/customFetch';
 import { toast } from 'react-toastify';
 
-export const action=async({request})=>{
+export const action=(queryClient)=>async({request})=>{
 
   const formData=await request.formData()
 
@@ -13,6 +13,7 @@ export const action=async({request})=>{
 
   try {
     await customFetch.post('/auth/login',data)
+    queryClient.invalidateQueries();
     toast.success('You are logged in!')
     return redirect('/dashboard')
   } catch (error) {
